@@ -1,6 +1,7 @@
 // Modules to control application life and create native browser window
-const { app, BrowserWindow, ipcMain, shell, dialog } = require("electron/main");
-const path = require("node:path");
+import { app, BrowserWindow, ipcMain, shell, dialog } from "electron/main";
+import path from "node:path";
+import LinkedInContext from "./launcher/BrowserContext.js";
 
 let mainWindow;
 
@@ -19,7 +20,7 @@ const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
   app.quit();
 } else {
-  app.on("second-instance", (event, commandLine, workingDirectory) => {
+  app.on("second-instance", async (event, commandLine, workingDirectory) => {
     // Someone tried to run a second instance, we should focus our window.
     if (mainWindow) {
       const deepLinkUrl = commandLine.find((arg) =>
@@ -30,48 +31,49 @@ if (!gotTheLock) {
         try {
           // Parse the URL properly
           const url = new URL(deepLinkUrl);
-          const dataParam = url.searchParams.get('data');
-          
+          const dataParam = url.searchParams.get("data");
+
           if (dataParam) {
             const data = JSON.parse(decodeURIComponent(dataParam));
-            
+
             if (mainWindow.isMinimized()) mainWindow.restore();
             mainWindow.focus();
 
             // Send the actual parsed data
-            mainWindow.webContents.send("deep-link", data);
-            
-            // Show success message instead of error
-            dialog.showMessageBox(mainWindow, {
-              type: 'info',
-              title: 'Deep Link Received',
-              message: `Action: ${data.action || 'Unknown'}\nMessage: ${data.message || 'No message'}`,
-              buttons: ['OK']
-            });
-            
+            // mainWindow.webContents.send("deep-link", data);
+
+            try {
+              const linkedinContext = new LinkedInContext();
+              await linkedinContext.init();
+            } catch (error) {
+              console.error("Error initializing browser context:", error);
+            }
+
             return; // Exit early, don't show the error dialog
           }
         } catch (error) {
-          console.error('Error parsing deep link data:', error);
-          dialog.showErrorBox("Error", `Failed to parse deep link data: ${error.message}`);
+          console.error("Error parsing deep link data:", error);
+          dialog.showErrorBox(
+            "Error",
+            `Failed to parse deep link data: ${error.message}`
+          );
           return; // Exit early, don't show the welcome dialog
         }
       }
-      
+
       // Only restore window if no deep link was processed
       if (mainWindow.isMinimized()) mainWindow.restore();
-      mainWindow.focus();
     }
 
     // Only show this dialog if no deep link was found
     const deepLinkUrl = commandLine.find((arg) =>
       arg.startsWith("zappedin://")
     );
-    
+
     if (!deepLinkUrl) {
       dialog.showErrorBox(
         "Welcome Back",
-        `You arrived from: ${commandLine.join(' ')}`
+        `You arrived from: ${commandLine.join(" ")}`
       );
     }
   });
@@ -79,27 +81,27 @@ if (!gotTheLock) {
   // Create mainWindow, load the rest of the app, etc...
   app.whenReady().then(() => {
     createWindow();
-    
+
     // Handle the initial launch with protocol (if app wasn't running)
     if (process.argv.length > 1) {
       const deepLinkUrl = process.argv.find((arg) =>
         arg.startsWith("zappedin://")
       );
-      
+
       if (deepLinkUrl) {
         try {
           const url = new URL(deepLinkUrl);
-          const dataParam = url.searchParams.get('data');
-          
+          const dataParam = url.searchParams.get("data");
+
           if (dataParam) {
             const data = JSON.parse(decodeURIComponent(dataParam));
             // Wait for window to be ready before sending data
-            mainWindow.webContents.once('did-finish-load', () => {
+            mainWindow.webContents.once("did-finish-load", () => {
               mainWindow.webContents.send("deep-link", data);
             });
           }
         } catch (error) {
-          console.error('Error parsing initial deep link data:', error);
+          console.error("Error parsing initial deep link data:", error);
         }
       }
     }
@@ -109,27 +111,22 @@ if (!gotTheLock) {
     // Handle macOS deep links
     try {
       const urlObj = new URL(url);
-      const dataParam = urlObj.searchParams.get('data');
-      
+      const dataParam = urlObj.searchParams.get("data");
+
       if (dataParam && mainWindow) {
         const data = JSON.parse(decodeURIComponent(dataParam));
         mainWindow.webContents.send("deep-link", data);
-        
-        // Show success message for macOS
-        dialog.showMessageBox(mainWindow, {
-          type: 'info',
-          title: 'Deep Link Received (macOS)',
-          message: `Action: ${data.action || 'Unknown'}\nMessage: ${data.message || 'No message'}`,
-          buttons: ['OK']
-        });
         return;
       }
     } catch (error) {
-      console.error('Error parsing macOS deep link data:', error);
-      dialog.showErrorBox("Error", `Failed to parse macOS deep link: ${error.message}`);
+      console.error("Error parsing macOS deep link data:", error);
+      dialog.showErrorBox(
+        "Error",
+        `Failed to parse macOS deep link: ${error.message}`
+      );
       return;
     }
-    
+
     // Only show this if not a deep link
     if (!url.startsWith("zappedin://")) {
       dialog.showErrorBox("Welcome Back", `You arrived from: ${url}`);
@@ -140,18 +137,14 @@ if (!gotTheLock) {
 function createWindow() {
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 400,
+    height: 400,
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
+      preload: path.join(process.cwd(), "preload.js"),
     },
   });
 
   mainWindow.loadFile("index.html");
-}
-
-function createBrowserContext() {
-  
 }
 
 // Quit when all windows are closed, except on macOS. There, it's common
