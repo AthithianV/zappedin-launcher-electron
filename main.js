@@ -6,12 +6,12 @@ let mainWindow;
 
 if (process.defaultApp) {
   if (process.argv.length >= 2) {
-    app.setAsDefaultProtocolClient("electron-fiddle", process.execPath, [
+    app.setAsDefaultProtocolClient("zappedin", process.execPath, [
       path.resolve(process.argv[1]),
     ]);
   }
 } else {
-  app.setAsDefaultProtocolClient("electron-fiddle");
+  app.setAsDefaultProtocolClient("zappedin");
 }
 
 const gotTheLock = app.requestSingleInstanceLock();
@@ -23,7 +23,7 @@ if (!gotTheLock) {
     // Someone tried to run a second instance, we should focus our window.
     if (mainWindow) {
       const deepLinkUrl = commandLine.find((arg) =>
-        arg.startsWith("electron-fiddle://")
+        arg.startsWith("zappedin://")
       );
 
       if (deepLinkUrl) {
@@ -65,7 +65,7 @@ if (!gotTheLock) {
 
     // Only show this dialog if no deep link was found
     const deepLinkUrl = commandLine.find((arg) =>
-      arg.startsWith("electron-fiddle://")
+      arg.startsWith("zappedin://")
     );
     
     if (!deepLinkUrl) {
@@ -83,7 +83,7 @@ if (!gotTheLock) {
     // Handle the initial launch with protocol (if app wasn't running)
     if (process.argv.length > 1) {
       const deepLinkUrl = process.argv.find((arg) =>
-        arg.startsWith("electron-fiddle://")
+        arg.startsWith("zappedin://")
       );
       
       if (deepLinkUrl) {
@@ -131,7 +131,7 @@ if (!gotTheLock) {
     }
     
     // Only show this if not a deep link
-    if (!url.startsWith("electron-fiddle://")) {
+    if (!url.startsWith("zappedin://")) {
       dialog.showErrorBox("Welcome Back", `You arrived from: ${url}`);
     }
   });

@@ -149,7 +149,7 @@
 
       function launchWithProtocol(data) {
         try {
-          const protocolUrl = `electron-fiddle://launch?data=${encodeURIComponent(
+          const protocolUrl = `zappedin://launch?data=${encodeURIComponent(
             JSON.stringify(data)
           )}`;
 
@@ -182,7 +182,7 @@
 
       // Test if protocol is available
       function testProtocolAvailability() {
-        const testUrl = "electron-fiddle://test";
+        const testUrl = "zappedin://test";
         const link = document.createElement("a");
         link.href = testUrl;
         link.style.display = "none";
