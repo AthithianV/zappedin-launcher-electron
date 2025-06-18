@@ -26,27 +26,114 @@ if (!gotTheLock) {
         arg.startsWith("electron-fiddle://")
       );
 
-      const data = JSON.parse(decodeURIComponent(deepLinkUrl.split("?")[1]));
+      if (deepLinkUrl) {
+        try {
+          // Parse the URL properly
+          const url = new URL(deepLinkUrl);
+          const dataParam = url.searchParams.get('data');
+          
+          if (dataParam) {
+            const data = JSON.parse(decodeURIComponent(dataParam));
+            
+            if (mainWindow.isMinimized()) mainWindow.restore();
+            mainWindow.focus();
 
+            // Send the actual parsed data
+            mainWindow.webContents.send("deep-link", data);
+            
+            // Show success message instead of error
+            dialog.showMessageBox(mainWindow, {
+              type: 'info',
+              title: 'Deep Link Received',
+              message: `Action: ${data.action || 'Unknown'}\nMessage: ${data.message || 'No message'}`,
+              buttons: ['OK']
+            });
+            
+            return; // Exit early, don't show the error dialog
+          }
+        } catch (error) {
+          console.error('Error parsing deep link data:', error);
+          dialog.showErrorBox("Error", `Failed to parse deep link data: ${error.message}`);
+          return; // Exit early, don't show the welcome dialog
+        }
+      }
+      
+      // Only restore window if no deep link was processed
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
-
-      mainWindow.webContents.send("deep-link", data);
     }
 
-    dialog.showErrorBox(
-      "Welcome Back",
-      `You arrived from: ${commandLine.pop().slice(0, -1)}`
+    // Only show this dialog if no deep link was found
+    const deepLinkUrl = commandLine.find((arg) =>
+      arg.startsWith("electron-fiddle://")
     );
+    
+    if (!deepLinkUrl) {
+      dialog.showErrorBox(
+        "Welcome Back",
+        `You arrived from: ${commandLine.join(' ')}`
+      );
+    }
   });
 
   // Create mainWindow, load the rest of the app, etc...
   app.whenReady().then(() => {
     createWindow();
+    
+    // Handle the initial launch with protocol (if app wasn't running)
+    if (process.argv.length > 1) {
+      const deepLinkUrl = process.argv.find((arg) =>
+        arg.startsWith("electron-fiddle://")
+      );
+      
+      if (deepLinkUrl) {
+        try {
+          const url = new URL(deepLinkUrl);
+          const dataParam = url.searchParams.get('data');
+          
+          if (dataParam) {
+            const data = JSON.parse(decodeURIComponent(dataParam));
+            // Wait for window to be ready before sending data
+            mainWindow.webContents.once('did-finish-load', () => {
+              mainWindow.webContents.send("deep-link", data);
+            });
+          }
+        } catch (error) {
+          console.error('Error parsing initial deep link data:', error);
+        }
+      }
+    }
   });
 
   app.on("open-url", (event, url) => {
-    dialog.showErrorBox("Welcome Back", `You arrived from: ${url}`);
+    // Handle macOS deep links
+    try {
+      const urlObj = new URL(url);
+      const dataParam = urlObj.searchParams.get('data');
+      
+      if (dataParam && mainWindow) {
+        const data = JSON.parse(decodeURIComponent(dataParam));
+        mainWindow.webContents.send("deep-link", data);
+        
+        // Show success message for macOS
+        dialog.showMessageBox(mainWindow, {
+          type: 'info',
+          title: 'Deep Link Received (macOS)',
+          message: `Action: ${data.action || 'Unknown'}\nMessage: ${data.message || 'No message'}`,
+          buttons: ['OK']
+        });
+        return;
+      }
+    } catch (error) {
+      console.error('Error parsing macOS deep link data:', error);
+      dialog.showErrorBox("Error", `Failed to parse macOS deep link: ${error.message}`);
+      return;
+    }
+    
+    // Only show this if not a deep link
+    if (!url.startsWith("electron-fiddle://")) {
+      dialog.showErrorBox("Welcome Back", `You arrived from: ${url}`);
+    }
   });
 }
 

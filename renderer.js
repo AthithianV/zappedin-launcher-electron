@@ -1,10 +1,10 @@
 // This file is required by the index.html file and will
 // be executed in the renderer process for that window.
 // All APIs exposed by the context bridge are available here.
-const { ipcRenderer } = require("electron");
 
 // Listen for deep-link event from main process
-ipcRenderer.on("deep-link", (event, data) => {
+window.electron.ipcRenderer.on("deep-link", (data) => {
+  // data is already the first argument, no need to destructure
   displayDeepLinkData(data);
 });
 
@@ -12,13 +12,20 @@ function displayDeepLinkData(data) {
   const dataContainer = document.getElementById("data-container");
   if (!dataContainer) return;
 
+  console.log("Working script");
+
   dataContainer.innerHTML = `
-    <h2>Deep Link Data</h2>
-    <pre>${JSON.stringify(data, null, 2)}</pre>
+    <h2>Deep Link Data Received!</h2>
+    <div style="background: #f0f0f0; padding: 15px; border-radius: 5px; font-family: monospace;">
+      <pre>${JSON.stringify(data, null, 2)}</pre>
+    </div>
   `;
 }
 
-// Binds the buttons to the context bridge API.
-document.getElementById("open-in-browser").addEventListener("click", () => {
-  window.shell.open();
-});
+// Check if there's a button for opening in browser
+const browserButton = document.getElementById("open-in-browser");
+if (browserButton) {
+  browserButton.addEventListener("click", () => {
+    window.shell.open();
+  });
+}

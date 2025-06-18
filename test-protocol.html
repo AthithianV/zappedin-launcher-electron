@@ -157,14 +157,14 @@
           window.location.href = protocolUrl;
 
           // Method 2: Create and click a link (fallback)
-          setTimeout(() => {
-            const link = document.createElement("a");
-            link.href = protocolUrl;
-            link.style.display = "none";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          }, 100);
+          // setTimeout(() => {
+          //   const link = document.createElement("a");
+          //   link.href = protocolUrl;
+          //   link.style.display = "none";
+          //   document.body.appendChild(link);
+          //   link.click();
+          //   document.body.removeChild(link);
+          // }, 100);
 
           showStatus("Launching Electron app...", "success");
 
