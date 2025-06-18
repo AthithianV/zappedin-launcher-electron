@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test zappedin:// Protocol - Direct Launch</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        margin: 10px;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      .status {
+        margin-top: 20px;
+        padding: 10px;
+        border-radius: 5px;
+      }
+      .success {
+        background: #d4edda;
+        color: #155724;
+      }
+      .error {
+        background: #f8d7da;
+        color: #721c24;
+      }
+      .info {
+        background: #d1ecf1;
+        color: #0c5460;
+      }
+      .warning {
+        background: #fff3cd;
+        color: #856404;
+      }
+      .launch-btn {
+        background: #28a745;
+        font-size: 18px;
+        padding: 20px 40px;
+        margin: 20px 0;
+      }
+      .launch-btn:hover {
+        background: #218838;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Test zappedin:// Protocol - Direct Launch</h1>
+      <p>
+        This should work like WhatsApp/Discord - clicking the button should
+        launch the Electron app immediately.
+      </p>
+
+      <div class="info">
+        <strong>Instructions:</strong><br />
+        1. Make sure the Electron app is installed and running<br />
+        2. Click the buttons below to launch the app directly<br />
+        3. The app should open immediately (like WhatsApp Web does)
+      </div>
+
+      <button class="launch-btn" onclick="launchApp()">
+        🚀 Launch Electron App
+      </button>
+      <button onclick="launchWithData()">Launch with Custom Data</button>
+      <button onclick="launchComplexData()">Launch with Complex Data</button>
+
+      <div id="status"></div>
+    </div>
+
+    <script>
+      function showStatus(message, type) {
+        const status = document.getElementById("status");
+        status.textContent = message;
+        status.className = `status ${type}`;
+      }
+
+      function launchApp() {
+        const data = {
+          message: "Direct launch from website!",
+          timestamp: new Date().toISOString(),
+          source: "direct-launch",
+          action: "open-app",
+        };
+
+        launchWithProtocol(data);
+      }
+
+      function launchWithData() {
+        const data = {
+          message: "Custom data launch!",
+          user: {
+            name: "Test User",
+            email: "test@example.com",
+            id: "12345",
+          },
+          action: "custom-data",
+          timestamp: new Date().toISOString(),
+          metadata: {
+            browser: navigator.userAgent,
+            url: window.location.href,
+          },
+        };
+
+        launchWithProtocol(data);
+      }
+
+      function launchComplexData() {
+        const data = {
+          message: "Complex data structure!",
+          user: {
+            name: "Complex User",
+            email: "complex@example.com",
+            preferences: {
+              theme: "dark",
+              language: "en",
+              notifications: true,
+            },
+          },
+          session: {
+            id: "sess_" + Math.random().toString(36).substr(2, 9),
+            startTime: new Date().toISOString(),
+          },
+          action: "complex-data",
+          timestamp: new Date().toISOString(),
+        };
+
+        launchWithProtocol(data);
+      }
+
+      function launchWithProtocol(data) {
+        try {
+          const protocolUrl = `electron-fiddle://launch?data=${encodeURIComponent(
+            JSON.stringify(data)
+          )}`;
+
+          // Method 1: Direct location change (works in most browsers)
+          window.location.href = protocolUrl;
+
+          // Method 2: Create and click a link (fallback)
+          setTimeout(() => {
+            const link = document.createElement("a");
+            link.href = protocolUrl;
+            link.style.display = "none";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }, 100);
+
+          showStatus("Launching Electron app...", "success");
+
+          // Check if app launched after a delay
+          setTimeout(() => {
+            showStatus(
+              "If the app didn't open, make sure it's installed and running",
+              "warning"
+            );
+          }, 3000);
+        } catch (error) {
+          showStatus("Failed to launch: " + error.message, "error");
+        }
+      }
+
+      // Test if protocol is available
+      function testProtocolAvailability() {
+        const testUrl = "electron-fiddle://test";
+        const link = document.createElement("a");
+        link.href = testUrl;
+        link.style.display = "none";
+
+        document.body.appendChild(link);
+
+        // Try to trigger the protocol
+        try {
+          link.click();
+          showStatus("Protocol test initiated", "info");
+        } catch (error) {
+          showStatus("Protocol test failed: " + error.message, "error");
+        }
+
+        document.body.removeChild(link);
+      }
+
+      // Add protocol test button
+      document.addEventListener("DOMContentLoaded", () => {
+        const testBtn = document.createElement("button");
+        testBtn.textContent = "Test Protocol Availability";
+        testBtn.style.background = "#ffc107";
+        testBtn.style.color = "#000";
+        testBtn.onclick = testProtocolAvailability;
+        document.querySelector(".container").appendChild(testBtn);
+      });
+    </script>
+  </body>
+</html>
