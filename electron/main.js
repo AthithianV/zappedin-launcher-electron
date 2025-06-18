@@ -1,7 +1,7 @@
 // Modules to control application life and create native browser window
 import { app, BrowserWindow, ipcMain, shell, dialog } from "electron/main";
 import path from "node:path";
-import LinkedInContext from "./launcher/BrowserContext.js";
+import LinkedInContext from "../launcher/BrowserContext.js";
 
 let mainWindow;
 
@@ -39,12 +39,18 @@ if (!gotTheLock) {
             if (mainWindow.isMinimized()) mainWindow.restore();
             mainWindow.focus();
 
+            /********** ***********/
+            const usrData = await fetchAccountData(data.id);
+
+            // usrData -> It contains the full json object containing the usename, proxies and status
+            /********** ***********/
+            console.log(usrData.data.username);
             // Send the actual parsed data
             // mainWindow.webContents.send("deep-link", data);
 
             try {
               const linkedinContext = new LinkedInContext();
-              await linkedinContext.init();
+              await linkedinContext.init(usrData.data);
             } catch (error) {
               console.error("Error initializing browser context:", error);
             }
@@ -134,6 +140,29 @@ if (!gotTheLock) {
   });
 }
 
+async function fetchAccountData(accountId) {
+  try{
+    const response = await fetch(`http://localhost:6001/api/v1/linkedin-account/get-by-id/${accountId}`);
+    if(!response.ok){
+      throw new Error("Api Request Failed");
+    }
+
+    const accountData = await response.json();
+
+    console.log(accountData);
+
+    if(!accountData.data.username) {
+      throw new Error("Username field missing in the accountData");
+    }
+
+    return accountData;
+  }
+  catch (error){
+    console.log("Error Fetching account data", error);
+    throw error;
+  }
+}
+
 function createWindow() {
   // Create the browser window.
   mainWindow = new BrowserWindow({
@@ -144,7 +173,7 @@ function createWindow() {
     },
   });
 
-  mainWindow.loadFile("index.html");
+  mainWindow.loadFile("./electron/index.html");
 }
 
 // Quit when all windows are closed, except on macOS. There, it's common

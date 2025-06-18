@@ -30,10 +30,13 @@ export default class LinkedInContext {
   browser = null;
   context = null;
   page = null;
+  userData = null;
 
-  async init() {
+  async init(userData) {
     try {
-      // const statePath = path.resolve(process.cwd(), 'state.json');
+
+      // storing username 
+      this.userData = userData;
 
       chromium.use(stealth());
 
@@ -42,11 +45,18 @@ export default class LinkedInContext {
         executablePath: chromePath,
         headless: false,
       });
+      
+      const {host_name, password, username, port} = userData.proxy
 
       // Create a new context with proxy if provided
       const contextOptions = {
         viewport: { width: 1280, height: 700 },
-        // storageState: statePath,
+        storageState: JSON.parse(this.userData.state),
+        proxy: {
+            server: `http://${host_name}:${port}`,
+            username: username,
+            password: password,
+        },
           // recordVideo: {
           //   dir: "videos",
           //   size: {
@@ -95,7 +105,7 @@ export default class LinkedInContext {
       };
     });
 
-    await this.page.goto("https://www.linkedin.com/");
+    await this.page.goto(`https://www.linkedin.com/in/${this.userData.username}`);
 
     console.log("Page created successfully");
     return true;
