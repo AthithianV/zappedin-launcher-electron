@@ -49,7 +49,7 @@ if (!gotTheLock) {
 
           /********** ***********/
           console.log(data);
-          const authToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjQsImVtYWlsIjoiYXRoaXRoaWFuQG91dGJveC52YyIsInJvbGUiOiJCVVlFUiIsImlhdCI6MTc1MDQxMzc0MiwiZXhwIjoxNzU1NTk3NzQyfQ.RHgtleFUXnqr7fiqCsm02VBJ7ylT4YjmWKHt_TH9phA";
+          const authToken = "will be found insides your dm";
           const usrData = await fetchAccountData(data.id, authToken);
 
           // usrData -> It contains the full json object containing the usename, proxies and status
