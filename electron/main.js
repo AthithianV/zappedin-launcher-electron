@@ -142,8 +142,6 @@ async function fetchAccountData(accountId, token) {
 
     const accountData = await response.json();
 
-    console.log(accountData);
-
     if (!accountData.data.username) {
       throw new Error("Username field missing in the accountData");
     }
