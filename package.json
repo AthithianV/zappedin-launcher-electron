@@ -7,7 +7,8 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "build": "electron-builder"
+    "build": "electron-builder",
+    "build:win": "electron-builder --win"
   },
   "keywords": [
     "electron",
@@ -17,9 +18,11 @@
   "author": "Your Name",
   "license": "MIT",
   "devDependencies": {
+    "@types/electron": "^1.4.38",
     "@types/node": "^24.0.3",
     "electron": "^28.0.0",
-    "electron-builder": "^24.6.4"
+    "electron-builder": "^24.13.3",
+    "typescript": "^5.8.3"
   },
   "dependencies": {
     "dotenv": "^16.5.0",
@@ -35,10 +38,12 @@
       "output": "dist"
     },
     "files": [
-      "main.js",
-      "renderer.js",
       "index.html",
-      "styles.css"
+      "styles.css",
+      "dist/",
+      "electron/**/*",
+      "launcher/**/*",
+      "dist/"
     ]
   }
 }

@@ -15,9 +15,11 @@ function displayDeepLinkData(data) {
   console.log("Working script");
 
   dataContainer.innerHTML = `
-    <h2>Deep Link Data Received!</h2>
-    <div style="background: #f0f0f0; padding: 15px; border-radius: 5px; font-family: monospace;">
-      <pre>${JSON.stringify(data, null, 2)}</pre>
+    <div>
+      <h2>Deep Link Data Received!</h2>
+      <div style="background: #f0f0f0; padding: 15px; border-radius: 5px; font-family: monospace;">
+        <pre>${JSON.stringify(data, null, 2)}</pre>
+      </div>
     </div>
   `;
 }

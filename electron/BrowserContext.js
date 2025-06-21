@@ -6,25 +6,6 @@ import { chromePath } from "./chromePath.js";
 
 config();
 
-// interface Proxy {
-//     id?: number;
-//     hostName: string;
-//     port: number;
-//     username: string;
-//     password: string;
-//     country: string;
-//     timezone: string;
-//     locale: string;
-// }
-
-// interface StorageState {
-//     cookies: Cookie[];
-//     origins: {
-//         origin: string;
-//         localStorage: { name: string; value: string }[];
-//     }[];
-// }
-
 // Class to handle browser context and session
 export default class LinkedInContext {
   browser = null;
@@ -34,7 +15,6 @@ export default class LinkedInContext {
 
   async init(userData) {
     try {
-
       // storing username 
       this.userData = userData;
 
@@ -57,13 +37,6 @@ export default class LinkedInContext {
             username: username,
             password: password,
         },
-          // recordVideo: {
-          //   dir: "videos",
-          //   size: {
-          //     width: 1280,
-          //     height: 700,
-          //   },
-        // },
       };
 
       this.context = await this.browser.newContext(contextOptions);
@@ -105,10 +78,122 @@ export default class LinkedInContext {
       };
     });
 
-    await this.page.goto(`https://www.linkedin.com/in/${this.userData.username}`);
+    // Navigate to LinkedIn and handle login if needed
+    await this.navigateAndLogin();
 
     console.log("Page created successfully");
     return true;
+  }
+
+  async navigateAndLogin() {
+    try {
+      // First, go to the profile page
+      await this.page.goto(`https://www.linkedin.com/in/${this.userData.username}`, { 
+        waitUntil: 'networkidle' 
+      });
+
+      // Wait a bit for the page to load completely
+      await this.page.waitForTimeout(2000);
+
+      // Check if we're redirected to login page
+      const currentUrl = this.page.url();
+      
+      if (this.isLoginPage(currentUrl)) {
+        console.log("Login required. Attempting to login...");
+        const loginSuccess = await this.performLogin();
+        
+        if (loginSuccess) {
+          console.log("Login successful. Redirecting to profile...");
+          // Navigate back to the intended profile page
+          await this.page.goto(`https://www.linkedin.com/in/${this.userData.username}`, { 
+            waitUntil: 'networkidle' 
+          });
+        } else {
+          console.error("Login failed");
+          return false;
+        }
+      } else {
+        console.log("Already logged in or profile accessible");
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error during navigation and login:", error);
+      return false;
+    }
+  }
+
+  isLoginPage(url) {
+    // Check if current URL indicates we're on a login page
+    return url.includes('/login') || 
+           url.includes('/uas/login') ||
+           url.includes('/checkpoint') ||
+           url === 'https://www.linkedin.com/' ||
+           url.includes('/authwall');
+  }
+
+  async performLogin() {
+    try {
+      // Wait for login form elements to be visible
+      await this.page.waitForSelector('#email-or-phone', { timeout: 10000 });
+
+      this.page.click("button:has-text('Sign in')");
+
+      await this.page.waitForSelector('#session_key', { timeout: 10000 });
+      
+      // Clear and fill username
+      const {email} = this.userData.email_account;
+      console.log("Entering username...");
+      await this.page.fill('#session_key', email);
+      
+      // Clear and fill password
+      console.log("Entering password...");
+      await this.page.fill('#session_password', this.userData.password);
+      
+      // Add a small delay to mimic human behavior
+      await this.page.waitForTimeout(1000);
+      
+      // Click the sign in button
+      console.log("Clicking sign in button...");
+      await this.page.getByRole('button', { name: 'Sign in' }).click();
+      
+      // Wait for navigation or handle potential challenges
+      await this.page.waitForTimeout(3000);
+      
+      // Check for various post-login scenarios
+      const currentUrl = this.page.url();
+      
+      // Handle 2FA/verification if present
+      // if (await this.handleTwoFactorAuth()) {
+      //   console.log("2FA handled successfully");
+      // }
+      
+      // Handle email verification if present
+      // if (await this.handleEmailVerification()) {
+      //   console.log("Email verification handled");
+      // }
+      
+      // Wait for final redirect
+      await this.page.waitForTimeout(2000);
+      
+      // Check if login was successful
+      const finalUrl = this.page.url();
+      const loginSuccessful = !this.isLoginPage(finalUrl) && 
+                             !finalUrl.includes('/challenge') &&
+                             !finalUrl.includes('/checkpoint');
+      
+      if (loginSuccessful) {
+        console.log("Login completed successfully");
+        return true;
+      } else {
+        console.error("Login may have failed. Current URL:", finalUrl);
+        return false;
+      }
+      
+    } catch (error) {
+      console.error("Error during login process:", error);
+      return false;
+    }
   }
 
   getPage() {
@@ -142,7 +227,6 @@ export default class LinkedInContext {
       // Create a new context with the new proxy
       const contextOptions = {
         viewport: { width: 1280, height: 700 },
-        // storageState: currentState || path.resolve(process.cwd(), "state.json"),
         proxy: {
           server: `http://${proxy.hostName}:${proxy.port}`,
           username: proxy.username,
@@ -197,13 +281,13 @@ export default class LinkedInContext {
   }
 
   async saveState() {
-    if (!this.context) {
+    if (!this.context) { 
       console.error("Context not initialized");
       return false;
     }
 
     // Save storage state
-    // await this.context.storageState({ path: "state.json" });
+    await this.context.storageState({ path: "state.json" });
     return true;
   }
 }
