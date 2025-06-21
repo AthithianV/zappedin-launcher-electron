@@ -15,7 +15,7 @@
     "launcher",
     "zappedin"
   ],
-  "author": "Your Name",
+  "author": "ZappedIn Team",
   "license": "MIT",
   "devDependencies": {
     "@types/electron": "^1.4.38",

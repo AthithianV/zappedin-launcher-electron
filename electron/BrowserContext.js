@@ -15,7 +15,7 @@ export default class LinkedInContext {
 
   async init(userData) {
     try {
-      // storing username 
+      // storing username
       this.userData = userData;
 
       chromium.use(stealth());
@@ -25,17 +25,24 @@ export default class LinkedInContext {
         executablePath: chromePath,
         headless: false,
       });
-      
-      const {host_name, password, username, port} = userData.proxy
+
+      const { host_name, password, username, port } = userData.proxy;
+
+      const storageState = this.userData.state
+        ? JSON.parse(this.userData.state)
+        : {
+            cookies: [],
+            origins: [],
+          };
 
       // Create a new context with proxy if provided
       const contextOptions = {
         viewport: { width: 1280, height: 700 },
-        storageState: JSON.parse(this.userData.state),
+        storageState,
         proxy: {
-            server: `http://${host_name}:${port}`,
-            username: username,
-            password: password,
+          server: `http://${host_name}:${port}`,
+          username: username,
+          password: password,
         },
       };
 
@@ -88,26 +95,32 @@ export default class LinkedInContext {
   async navigateAndLogin() {
     try {
       // First, go to the profile page
-      await this.page.goto(`https://www.linkedin.com/in/${this.userData.username}`, { 
-        waitUntil: 'networkidle' 
-      });
+      await this.page.goto(
+        `https://www.linkedin.com/in/${this.userData.username}`,
+        {
+          waitUntil: "networkidle",
+        }
+      );
 
       // Wait a bit for the page to load completely
       await this.page.waitForTimeout(2000);
 
       // Check if we're redirected to login page
       const currentUrl = this.page.url();
-      
+
       if (this.isLoginPage(currentUrl)) {
         console.log("Login required. Attempting to login...");
         const loginSuccess = await this.performLogin();
-        
+
         if (loginSuccess) {
           console.log("Login successful. Redirecting to profile...");
           // Navigate back to the intended profile page
-          await this.page.goto(`https://www.linkedin.com/in/${this.userData.username}`, { 
-            waitUntil: 'networkidle' 
-          });
+          await this.page.goto(
+            `https://www.linkedin.com/in/${this.userData.username}`,
+            {
+              waitUntil: "networkidle",
+            }
+          );
         } else {
           console.error("Login failed");
           return false;
@@ -125,63 +138,66 @@ export default class LinkedInContext {
 
   isLoginPage(url) {
     // Check if current URL indicates we're on a login page
-    return url.includes('/login') || 
-           url.includes('/uas/login') ||
-           url.includes('/checkpoint') ||
-           url === 'https://www.linkedin.com/' ||
-           url.includes('/authwall');
+    return (
+      url.includes("/login") ||
+      url.includes("/uas/login") ||
+      url.includes("/checkpoint") ||
+      url === "https://www.linkedin.com/" ||
+      url.includes("/authwall")
+    );
   }
 
   async performLogin() {
     try {
       // Wait for login form elements to be visible
-      await this.page.waitForSelector('#email-or-phone', { timeout: 10000 });
+      await this.page.waitForSelector("#email-or-phone", { timeout: 10000 });
 
       this.page.click("button:has-text('Sign in')");
 
-      await this.page.waitForSelector('#session_key', { timeout: 10000 });
-      
+      await this.page.waitForSelector("#session_key", { timeout: 10000 });
+
       // Clear and fill username
-      const {email} = this.userData.email_account;
+      const { email } = this.userData.email_account;
       console.log("Entering username...");
-      await this.page.fill('#session_key', email);
-      
+      await this.page.fill("#session_key", email);
+
       // Clear and fill password
       console.log("Entering password...");
-      await this.page.fill('#session_password', this.userData.password);
-      
+      await this.page.fill("#session_password", this.userData.password);
+
       // Add a small delay to mimic human behavior
       await this.page.waitForTimeout(1000);
-      
+
       // Click the sign in button
       console.log("Clicking sign in button...");
-      await this.page.getByRole('button', { name: 'Sign in' }).click();
-      
+      await this.page.getByRole("button", { name: "Sign in" }).click();
+
       // Wait for navigation or handle potential challenges
       await this.page.waitForTimeout(3000);
-      
+
       // Check for various post-login scenarios
       const currentUrl = this.page.url();
-      
+
       // Handle 2FA/verification if present
       // if (await this.handleTwoFactorAuth()) {
       //   console.log("2FA handled successfully");
       // }
-      
+
       // Handle email verification if present
       // if (await this.handleEmailVerification()) {
       //   console.log("Email verification handled");
       // }
-      
+
       // Wait for final redirect
       await this.page.waitForTimeout(2000);
-      
+
       // Check if login was successful
       const finalUrl = this.page.url();
-      const loginSuccessful = !this.isLoginPage(finalUrl) && 
-                             !finalUrl.includes('/challenge') &&
-                             !finalUrl.includes('/checkpoint');
-      
+      const loginSuccessful =
+        !this.isLoginPage(finalUrl) &&
+        !finalUrl.includes("/challenge") &&
+        !finalUrl.includes("/checkpoint");
+
       if (loginSuccessful) {
         console.log("Login completed successfully");
         return true;
@@ -189,7 +205,6 @@ export default class LinkedInContext {
         console.error("Login may have failed. Current URL:", finalUrl);
         return false;
       }
-      
     } catch (error) {
       console.error("Error during login process:", error);
       return false;
@@ -281,7 +296,7 @@ export default class LinkedInContext {
   }
 
   async saveState() {
-    if (!this.context) { 
+    if (!this.context) {
       console.error("Context not initialized");
       return false;
     }
