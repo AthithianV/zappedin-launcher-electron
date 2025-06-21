@@ -1,13 +1,5 @@
 // Modules to control application life and create native browser window
-import {
-  app,
-  BrowserWindow,
-  ipcMain,
-  shell,
-  Tray,
-  Menu,
-  nativeImage,
-} from "electron/main";
+import { app, ipcMain, shell, Tray, Menu, nativeImage } from "electron/main";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import LinkedInContext from "./BrowserContext.js";
@@ -81,11 +73,8 @@ if (!gotTheLock) {
     }
   });
 
-  // Create mainWindow, load the rest of the app, etc...
   app.whenReady().then(() => {
-    createWindow();
     createTray();
-
     // Handle the initial launch with protocol (if app wasn't running)
     if (process.argv.length > 1) {
       const deepLinkUrl = process.argv.find((arg) =>
@@ -166,35 +155,6 @@ async function fetchAccountData(accountId, token) {
   }
 }
 
-function createWindow() {
-  // Create the browser window but don't show it
-  mainWindow = new BrowserWindow({
-    width: 400,
-    height: 400,
-    show: false, // Don't show the window initially
-    skipTaskbar: true, // Don't show in taskbar
-    webPreferences: {
-      preload: path.join(process.cwd(), "preload.js"),
-    },
-  });
-
-  mainWindow.loadFile("./electron/index.html");
-
-  // Prevent the window from being shown when ready
-  mainWindow.once("ready-to-show", () => {
-    // Don't call mainWindow.show() here
-    console.log("App is running in background");
-  });
-
-  // Handle window close event to hide instead of closing
-  mainWindow.on("close", (event) => {
-    if (!app.isQuiting) {
-      event.preventDefault();
-      mainWindow.hide();
-    }
-  });
-}
-
 function createTray() {
   // Create tray icon - try to load from assets folder
   const iconPath = path.join(__dirname, "assets", "icon.png");
@@ -226,21 +186,6 @@ function createTray() {
 
   // Create context menu
   const contextMenu = Menu.buildFromTemplate([
-    {
-      label: "Show App",
-      click: () => {
-        mainWindow.show();
-      },
-    },
-    {
-      label: "Hide App",
-      click: () => {
-        mainWindow.hide();
-      },
-    },
-    {
-      type: "separator",
-    },
     {
       label: "Quit",
       click: () => {
@@ -285,14 +230,6 @@ function showNotification(title, body) {
 app.on("window-all-closed", function () {
   // Keep the app running even when all windows are closed
   // The app will continue to run in the background with the tray icon
-});
-
-// Handle app activation (macOS)
-app.on("activate", () => {
-  // On macOS, don't create a new window, just show notification
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
 });
 
 // Ensure app quits properly when user explicitly quits
