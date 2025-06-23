@@ -2,7 +2,7 @@
   "name": "zappedin-launcher-electron",
   "version": "1.0.0",
   "description": "A simple Electron app that can be triggered from a website",
-  "main": "./electron/main.js",
+  "main": "./src/main.js",
   "type": "module",
   "scripts": {
     "start": "electron .",
@@ -38,12 +38,7 @@
       "output": "dist"
     },
     "files": [
-      "index.html",
-      "styles.css",
-      "dist/",
-      "electron/**/*",
-      "launcher/**/*",
-      "dist/"
+      "src/**/*"
     ]
   }
 }

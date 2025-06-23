@@ -215,56 +215,6 @@ export default class LinkedInContext {
     return this.page;
   }
 
-  async setProxy(proxy) {
-    try {
-      // Store current state before closing
-      let currentState = null;
-      if (this.context) {
-        currentState = await this.context.storageState();
-      }
-
-      // Close only the context, not the browser
-      if (this.context) {
-        await this.context.close();
-        await this.saveCurrentVideo();
-        this.context = null;
-        this.page = null;
-      }
-
-      // If browser is closed or not initialized, initialize it
-      if (!this.browser) {
-        this.browser = await chromium.launch({
-          executablePath: chromePath,
-          headless: false,
-        });
-      }
-
-      // Create a new context with the new proxy
-      const contextOptions = {
-        viewport: { width: 1280, height: 700 },
-        proxy: {
-          server: `http://${proxy.hostName}:${proxy.port}`,
-          username: proxy.username,
-          password: proxy.password,
-        },
-        timezoneId: proxy.timezone,
-        locale: proxy.locale,
-      };
-
-      this.context = await this.browser.newContext(contextOptions);
-
-      // Create a new page
-      await this.createPage();
-      console.log(
-        `Proxy successfully updated to ${proxy.hostName}:${proxy.port}`
-      );
-      return true;
-    } catch (error) {
-      console.error("Failed to set proxy:", error);
-      return false;
-    }
-  }
-
   async close() {
     try {
       // Save storage state (also needs context to be alive)
